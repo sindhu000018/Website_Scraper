@@ -1,0 +1,42 @@
+
+from bs4 import BeautifulSoup
+import requests
+import re
+import pandas as pd
+from datetime import datetime, timedelta, date
+
+data=dict()
+scraped_df = pd.DataFrame() 
+pages = 11
+page_num = 1
+for page_num in range(pages):
+  main_url = 'https://www.poynter.org/ifcn-covid-19-misinformation/page/'+ str(page_num) +'/'
+  main_response = requests.get(main_url, headers={'User-Agent': 'Mozilla/5.0'})
+  main_soup = BeautifulSoup(main_response.content, 'html.parser')
+  link_elements = main_soup.find_all('h2', attrs={'class': 'entry-title'}) 
+  for link in link_elements:
+    link_url = link.a.get('href')
+    response = requests.get(link_url, headers={'User-Agent': 'Mozilla/5.0'})
+    soup = BeautifulSoup(response.content, 'html.parser')
+    page_elements = soup.find_all('div', attrs={'class': 'post-container'})
+    for ele in page_elements:
+      temp = []
+      ele_str= str(ele.text)
+      else_str_split = ele_str.splitlines()
+      fact_check_temp = else_str_split[2]
+      fact_check = fact_check_temp
+      data['Fact_checked_by'] = re.split('[-:]', fact_check_temp)[2]
+      date_country = else_str_split[3]
+      data['Date']  = re.split('[-|]', date_country)[0]
+      data['Country']  = re.split('[-|]', date_country)[1]
+      label_text = else_str_split[5]
+      data['Text'] = re.split('[-:]', label_text)[1]
+      data['Label'] = re.split('[-:]', label_text)[0]
+      text_explanation  = else_str_split[10]
+      data['Explanation'] = re.split ('[-:]', text_explanation)[1]
+      text_origin = else_str_split[13]
+      data['Origin'] = re.split ('[-:]', text_origin)[1]
+      temp.append(data)
+      scraped_df = scraped_df.append(temp)
+scraped_df.to_csv('scraped_data.csv')
+print("Scrapping Completed")
