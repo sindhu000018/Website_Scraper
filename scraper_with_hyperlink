@@ -7,36 +7,53 @@ from datetime import datetime, timedelta, date
 
 data=dict()
 scraped_df = pd.DataFrame() 
-pages = 11
+pages = 465
 page_num = 1
 for page_num in range(pages):
-  main_url = 'https://www.poynter.org/ifcn-covid-19-misinformation/page/'+ str(page_num) +'/'
-  main_response = requests.get(main_url, headers={'User-Agent': 'Mozilla/5.0'})
-  main_soup = BeautifulSoup(main_response.content, 'html.parser')
-  link_elements = main_soup.find_all('h2', attrs={'class': 'entry-title'}) 
-  for link in link_elements:
-    link_url = link.a.get('href')
-    response = requests.get(link_url, headers={'User-Agent': 'Mozilla/5.0'})
-    soup = BeautifulSoup(response.content, 'html.parser')
-    page_elements = soup.find_all('div', attrs={'class': 'post-container'})
-    for ele in page_elements:
-      temp = []
-      ele_str= str(ele.text)
-      else_str_split = ele_str.splitlines()
-      fact_check_temp = else_str_split[2]
-      fact_check = fact_check_temp
-      data['Fact_checked_by'] = re.split('[-:]', fact_check_temp)[2]
-      date_country = else_str_split[3]
-      data['Date']  = re.split('[-|]', date_country)[0]
-      data['Country']  = re.split('[-|]', date_country)[1]
-      label_text = else_str_split[5]
-      data['Text'] = re.split('[-:]', label_text)[1]
-      data['Label'] = re.split('[-:]', label_text)[0]
-      text_explanation  = else_str_split[10]
-      data['Explanation'] = re.split ('[-:]', text_explanation)[1]
-      text_origin = else_str_split[13]
-      data['Origin'] = re.split ('[-:]', text_origin)[1]
-      temp.append(data)
-      scraped_df = scraped_df.append(temp)
-scraped_df.to_csv('scraped_data.csv')
+  if(page_num != 0):
+    main_url = 'https://www.poynter.org/ifcn-covid-19-misinformation/page/'+ str(page_num) +'/'
+    print(main_url)
+    main_response = requests.get(main_url, headers={'User-Agent': 'Mozilla/5.0'})
+    main_soup = BeautifulSoup(main_response.content, 'html.parser')
+    link_elements = main_soup.find_all('h2', attrs={'class': 'entry-title'}) 
+    for link in link_elements:
+      link_url = link.a.get('href')
+      print(link_url)
+      response = requests.get(link_url, headers={'User-Agent': 'Mozilla/5.0'})
+      soup = BeautifulSoup(response.content, 'html.parser')
+      page_elements = soup.find_all('div', attrs={'class': 'post-container'})
+      for ele in page_elements:
+        temp = []
+        ele_str= str(ele.text)
+        else_str_split = ele_str.splitlines()
+        fact_check_temp = else_str_split[2]
+        fact_check = fact_check_temp
+        data['Poynter_Link'] = link_url
+        data['Fact_checked_by'] = re.split('[-:]', fact_check_temp)[2]
+        date_country = else_str_split[3]
+        data['Date']  = re.split('[-|]', date_country)[0]
+        data['Country']  = re.split('[-|]', date_country)[1]
+        label_text = else_str_split[5]
+        data['Text'] = re.split('[-:]', label_text)[1]
+        data['Label'] = re.split('[-:]', label_text)[0]
+        text_explanation  = else_str_split[10]
+        if(len(re.split ('[-:]', text_explanation))>1):
+          data['Explanation'] = re.split ('[-:]', text_explanation)[1]
+        else:
+          text_explanation  = else_str_split[11]
+          data['Explanation'] = re.split ('[-:]', text_explanation)[1]
+        text_origin = else_str_split[13]
+        origin_index = re.split ('[-:]', text_origin)
+        if(len(origin_index)>1):
+          data['Origin'] = re.split ('[-:]', text_origin)[1]
+        else:
+          text_origin = else_str_split[14]
+          if(len(re.split ('[-:]', text_origin))>1):
+            data['Origin'] = re.split ('[-:]', text_origin)[1]
+          else:
+            text_origin = else_str_split[15]
+            data['Origin'] = re.split ('[-:]', text_origin)[0]
+        temp.append(data)
+        scraped_df = scraped_df.append(temp)
+scraped_df.to_csv('Pynter_scraped_data.csv')
 print("Scrapping Completed")
