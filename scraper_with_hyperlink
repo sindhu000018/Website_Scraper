@@ -12,16 +12,18 @@ page_num = 1
 for page_num in range(pages):
   if(page_num != 0):
     main_url = 'https://www.poynter.org/ifcn-covid-19-misinformation/page/'+ str(page_num) +'/'
-    print(main_url)
     main_response = requests.get(main_url, headers={'User-Agent': 'Mozilla/5.0'})
     main_soup = BeautifulSoup(main_response.content, 'html.parser')
     link_elements = main_soup.find_all('h2', attrs={'class': 'entry-title'}) 
     for link in link_elements:
       link_url = link.a.get('href')
-      print(link_url)
       response = requests.get(link_url, headers={'User-Agent': 'Mozilla/5.0'})
       soup = BeautifulSoup(response.content, 'html.parser')
       page_elements = soup.find_all('div', attrs={'class': 'post-container'})
+      page_elements2 = soup.find('a', attrs = {'class' : 'button entry-content__button entry-content__button--smaller'})
+      origin_url = page_elements2.get('href')
+      print(origin_url)
+      data['Origin_URL'] = origin_url
       for ele in page_elements:
         temp = []
         ele_str= str(ele.text)
@@ -55,5 +57,7 @@ for page_num in range(pages):
             data['Origin'] = re.split ('[-:]', text_origin)[0]
         temp.append(data)
         scraped_df = scraped_df.append(temp)
-scraped_df.to_csv('Pynter_scraped_data.csv')
+scraped_df.to_csv('Poynter_scraped_data.csv')
+
 print("Scrapping Completed")
+
